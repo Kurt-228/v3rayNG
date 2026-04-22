@@ -57,7 +57,7 @@ jobs:
 
           gomobile init
           go mod tidy -v
-          gomobile bind -v -androidapi 19 -ldflags='-s -w' ./
+          gomobile bind -v -androidapi 24 -ldflags='-s -w' ./
           cp -v *.aar "${{ github.workspace }}/V2rayNG/app/libs/"
 
       - name: Decode Keystore
