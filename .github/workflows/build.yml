@@ -69,7 +69,6 @@ jobs:
           cp -v *.aar "${{ github.workspace }}/V2rayNG/app/libs/"
 
       - name: Decode Keystore
-        if: ${{ secrets.SIGNING_KEY != '' }}
         uses: timheuer/base64-to-file@v1.2
         with:
           fileName: 'android_keystore.jks'
