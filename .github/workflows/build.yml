@@ -8,7 +8,8 @@ on:
         required: true
       V2RAYNG_VERSION:
         description: 'v2rayNG version'
-        required: true
+        required: false
+        default: 'master'
 
 jobs:
   build:
@@ -19,13 +20,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Checkout requested v2rayNG tag
-        run: |
-          git fetch --tags
-          git checkout "v${{ github.event.inputs.V2RAYNG_VERSION }}" || git checkout "${{ github.event.inputs.V2RAYNG_VERSION }}"
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -45,7 +39,6 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-
           mkdir -p "${{ github.workspace }}/build"
           cd "${{ github.workspace }}/build"
           git clone --depth=1 -b main https://github.com/2dust/AndroidLibXrayLite.git
@@ -65,7 +58,6 @@ jobs:
           gomobile init
           go mod tidy -v
           gomobile bind -v -androidapi 19 -ldflags='-s -w' ./
-
           cp -v *.aar "${{ github.workspace }}/V2rayNG/app/libs/"
 
       - name: Decode Keystore
@@ -80,13 +72,12 @@ jobs:
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+        shell: bash
         run: |
           set -euxo pipefail
           cd "${{ github.workspace }}/V2rayNG"
           chmod -R u+rwX .
-
-          sed -i 's/org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8/org.gradle.jvmargs=-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8/' gradle.properties
-
+          sed -i 's/org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8/org.gradle.jvmargs=-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8/' gradle.properties || true
           ./gradlew :app:assembleRelease -x test
 
       - name: Upload APK artifact
@@ -98,6 +89,6 @@ jobs:
       - name: Upload apk to release
         uses: softprops/action-gh-release@v2
         with:
-          name: v2rayNG_${{ github.event.inputs.V2RAYNG_VERSION }}_${{ github.event.inputs.XRAY_CORE_VERSION }}
-          tag_name: v${{ github.event.inputs.V2RAYNG_VERSION }}_${{ github.event.inputs.XRAY_CORE_VERSION }}
+          name: v2rayNG_master_${{ github.event.inputs.XRAY_CORE_VERSION }}
+          tag_name: v2rayNG_master_${{ github.event.inputs.XRAY_CORE_VERSION }}
           files: /home/runner/work/v2rayNG/v2rayNG/V2rayNG/app/build/outputs/apk/release/*.apk
